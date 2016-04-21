@@ -1,13 +1,19 @@
 if Pusher.app_id.nil?
-  warn("Warning: `Pusher.app_id` is not set. Should be set before including PusherFake.")
+  warn <<-EOS.strip
+    Warning: `Pusher.app_id` is not set. Should be set before including PusherFake."
+  EOS
 end
 
 if Pusher.key.nil?
-  warn("Warning: `Pusher.key` is not set. Should be set before including PusherFake.")
+  warn <<-EOS.strip
+    Warning: `Pusher.key` is not set. Should be set before including PusherFake.
+  EOS
 end
 
 if Pusher.secret.nil?
-  warn("Warning: `Pusher.secret` is not set. Should be set before including PusherFake.")
+  warn <<-EOS.strip
+    Warning: `Pusher.secret` is not set. Should be set before including PusherFake.
+  EOS
 end
 
 # Use the same API key and secret as the live version.

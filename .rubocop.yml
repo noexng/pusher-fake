@@ -1,0 +1,18 @@
+require:
+  - rubocop-rspec
+
+RSpec/MultipleDescribes:
+  Enabled: false
+
+Style/AlignHash:
+  EnforcedColonStyle: table
+  EnforcedHashRocketStyle: table
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/RaiseArgs:
+  EnforcedStyle: compact
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes

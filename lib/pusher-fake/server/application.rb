@@ -1,12 +1,17 @@
 module PusherFake
   module Server
+    # The application for the web server.
     class Application
-      CHANNEL_FILTER_ERROR = "user_count may only be requested for presence channels - " +
-                               "please supply filter_by_prefix begining with presence-".freeze
+      CHANNEL_FILTER_ERROR = %(
+        user_count may only be requested for presence channels -
+        please supply filter_by_prefix begining with presence-
+      ).freeze
 
-      CHANNEL_USER_COUNT_ERROR = "Cannot retrieve the user count unless the channel is a presence channel".freeze
+      CHANNEL_USER_COUNT_ERROR = %(
+        Cannot retrieve the user count unless the channel is a presence channel
+      ).freeze
 
-      PRESENCE_PREFIX_MATCHER = /\Apresence-/.freeze
+      PRESENCE_PREFIX_MATCHER = /\Apresence-/
 
       # Process an API request.
       #
@@ -15,22 +20,24 @@ module PusherFake
       def self.call(environment)
         id       = PusherFake.configuration.app_id
         request  = Rack::Request.new(environment)
-        response = case request.path
-                   when %r{\A/apps/#{id}/events\Z}
-                     events(request)
-                   when %r{\A/apps/#{id}/channels\Z}
-                     channels(request)
-                   when %r{\A/apps/#{id}/channels/([^/]+)\Z}
-                     channel($1, request)
-                   when %r{\A/apps/#{id}/channels/([^/]+)/users\Z}
-                     users($1)
-                   else
-                     raise "Unknown path: #{request.path}"
-                   end
+        response = route(id, request) || raise("Unknown path: #{request.path}")
 
         Rack::Response.new(MultiJson.dump(response)).finish
       rescue => error
         Rack::Response.new(error.message, 400).finish
+      end
+
+      def self.route(id, request)
+        case request.path
+        when %r{\A/apps/#{id}/events\Z}
+          events(request)
+        when %r{\A/apps/#{id}/channels\Z}
+          channels(request)
+        when %r{\A/apps/#{id}/channels/([^/]+)\Z}
+          channel(Regexp.last_match[1], request)
+        when %r{\A/apps/#{id}/channels/([^/]+)/users\Z}
+          users(Regexp.last_match[1])
+        end
       end
 
       # Emit an event with data to the requested channel(s).
@@ -72,14 +79,19 @@ module PusherFake
         channel  = channels[name]
 
         {}.tap do |result|
-          result[:occupied]   = !channel.nil? && channel.connections.length > 0
-          result[:user_count] = channel.connections.length if channel && info.include?("user_count")
+          result[:occupied] = !channel.nil? && channel.connections.length > 0
+
+          if channel && info.include?("user_count")
+            result[:user_count] = channel.connections.length
+          end
         end
       end
 
-      # Returns a hash of occupied channels, optionally filtering with a prefix.
+      # Returns a hash of occupied channels, optionally filtering with a
+      # prefix.
       #
-      # When filtering to presence chanenls, the user count maybe also be requested.
+      # When filtering to presence chanenls, the user count maybe also be
+      # requested.
       #
       # @param [Rack::Request] request The HTTP request.
       # @return [Hash] A hash of occupied channels.
@@ -91,13 +103,16 @@ module PusherFake
           raise CHANNEL_FILTER_ERROR
         end
 
-        filter   = Regexp.new(%r{\A#{prefix}})
+        filter   = Regexp.new(/\A#{prefix}/)
         channels = PusherFake::Channel.channels || {}
-        channels.inject(channels: {}) do |result, (name, channel)|
+        channels.each_with_object(channels: {}) do |result, (name, channel)|
           unless filter && name !~ filter
             channels = result[:channels]
             channels[name] = {}
-            channels[name][:user_count] = channel.connections.length if info.include?("user_count")
+
+            if info.include?("user_count")
+              channels[name][:user_count] = channel.connections.length
+            end
           end
 
           result

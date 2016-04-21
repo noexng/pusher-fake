@@ -2,6 +2,22 @@ module PusherFake
   module Server
     autoload :Application, "pusher-fake/server/application"
 
+    # Convenience method for access the configuration object.
+    #
+    # @return [Configuration] The configuration object.
+    def self.configuration
+      PusherFake.configuration
+    end
+
+    # Return a hash of options for the socket server based on
+    # the configuration.
+    #
+    # @return [Hash] The socket server configuration options.
+    def self.socket_server_options
+      { host: configuration.socket_host,
+        port: configuration.socket_port }
+    end
+
     # Start the servers.
     #
     # @see start_socket_server
@@ -20,46 +36,26 @@ module PusherFake
           connection = Connection.new(socket)
           connection.establish
 
-          socket.onmessage do |data|
-            connection.process(data)
-          end
-          socket.onclose do
-            Channel.remove(connection)
-          end
+          socket.onclose   { Channel.remove(connection) }
+          socket.onmessage { |data| connection.process(data) }
         end
       end
     end
 
     # Start the web server.
     def self.start_web_server
-      options = configuration.web_options.dup
-
       Thin::Logging.silent = true
-      Thin::Server.new(options.delete(:host), options.delete(:port), Application).tap do |server|
-        options.each do |key, value|
-          server.__send__("#{key}=", value)
-        end
 
-        server.start!
+      options = configuration.web_options.dup
+      server  = Thin::Server.new(
+        options.delete(:host), options.delete(:port), Application
+      )
+
+      options.each do |key, value|
+        server.__send__("#{key}=", value)
       end
-    end
 
-    private
-
-    # Convenience method for access the configuration object.
-    #
-    # @return [Configuration] The configuration object.
-    def self.configuration
-      PusherFake.configuration
-    end
-
-    # Return a hash of options for the socket server based on
-    # the configuration.
-    #
-    # @return [Hash] The socket server configuration options.
-    def self.socket_server_options
-      { host: configuration.socket_host,
-        port: configuration.socket_port }
+      server.start!
     end
   end
 end

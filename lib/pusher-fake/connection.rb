@@ -1,14 +1,15 @@
 module PusherFake
+  # A client connection.
   class Connection
     # Name matcher for client events.
-    CLIENT_EVENT_MATCHER  = /\Aclient-(.+)\Z/.freeze
+    CLIENT_EVENT_MATCHER = /\Aclient-(.+)\Z/
 
-    # @return [EventMachine::WebSocket::Connection] The socket object for this connection.
+    # @return [EventMachine::WebSocket::Connection] The socket object.
     attr_reader :socket
 
     # Create a new {Connection} object.
     #
-    # @param [EventMachine::WebSocket::Connection] socket The socket object for the connection.
+    # @param [EventMachine::WebSocket::Connection] socket The socket object.
     def initialize(socket)
       @socket = socket
     end
@@ -39,7 +40,8 @@ module PusherFake
 
     # Notify the Pusher client that a connection has been established.
     def establish
-      emit("pusher:connection_established", socket_id: id, activity_timeout: 120)
+      emit("pusher:connection_established",
+           socket_id: id, activity_timeout: 120)
     end
 
     # Process an event.
@@ -75,13 +77,12 @@ module PusherFake
 
     def trigger(channel, id, event, data)
       Thread.new do
-        hook = {
-          event:     event,
-          channel:   channel.name,
-          socket_id: id
-        }
-        hook[:data]    = MultiJson.dump(data) if data
-        hook[:user_id] = channel.members[self][:user_id] if channel.is_a?(Channel::Presence)
+        hook = { event: event, channel: channel.name, socket_id: id }
+        hook[:data] = MultiJson.dump(data) if data
+
+        if channel.is_a?(Channel::Presence)
+          hook[:user_id] = channel.members[self][:user_id]
+        end
 
         channel.trigger("client_event", hook)
       end

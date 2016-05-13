@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+$: << './lib'
+
+require 'pusher-fake/cli'
+PusherFake::CLI.start

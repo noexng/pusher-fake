@@ -9,14 +9,16 @@ Gem::Specification.new do |s|
   s.description = "A fake Pusher server for development and testing."
   s.license     = "MIT"
 
-  s.files        = Dir["lib/**/*"].to_a
+  s.files        = Dir["lib/**/*"].to_a + Dir['bin/*'].to_a
   s.test_files   = Dir["spec/**/*"].to_a
+  s.executables  = "pusher-fake"
   s.require_path = "lib"
 
   s.add_dependency "em-http-request", "~> 1.1"
   s.add_dependency "em-websocket",    "~> 0.5"
   s.add_dependency "thin",            "~> 1.5"
   s.add_dependency "multi_json",      "~> 1.6"
+  s.add_dependency "thor",            '~> 0.19'
 
   s.add_development_dependency "capybara-webkit", "1.8.0"
   s.add_development_dependency "pusher",          "0.17.0"

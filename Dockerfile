@@ -10,6 +10,6 @@ RUN bundle install --deployment --without development test
 
 ADD . /opt/pusher-fake
 
-EXPOSE 80 81
+EXPOSE 10080 10081
 
-CMD /usr/local/bundle/bin/pusher-fake --web-port 80 --socket-port 81 --app-id $PUSHER_APP_ID --key $PUSHER_KEY --secret $PUSHER_SECRET
+ENTRYPOINT ["/usr/local/bundle/bin/pusher-fake",  "--web-port", "10080", "--socket-port", "10081"]
